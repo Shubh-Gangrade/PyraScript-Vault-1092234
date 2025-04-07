@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Panel - PyraVault</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1,
+    h2 {
+      color: #222;
+    }
+
+    a {
+      margin-right: 10px;
+      text-decoration: none;
+      color: #007bff;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .section {
+      margin-top: 40px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      margin-top: 10px;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      border: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background: #333;
+      color: #fff;
+      font-weight: 500;
+    }
+
+    tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+
+    form.inline {
+      display: inline;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      padding: 8px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    label {
+      margin-left: 5px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover {
+      background: #0056b3;
+    }
+
+    .btn-danger {
+      background: #dc3545;
+    }
+
+    .btn-danger:hover {
+      background: #a71d2a;
+    }
+
+    .header {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <hr>
+  <div class="header">
+    <h1>Admin Panel - Pyravault</h1>
+    <a href="/dashboard">Back to Dashboard</a>
+    <a href="/logout">Logout</a>
+  </div>
+  <hr>
+  <div class="section">
+    <h2>All Users</h2>
+    <table id="userTable">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Role</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+
+    <hr>
+    <div class="section">
+      <h2>Recent Logs</h2>
+      <table id="logTable">
+        <thead>
+          <tr>
+            <th>User</th>
+            <th>Page</th>
+            <th>IP</th>
+            <th>Time</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <hr>
+    <details>
+      <summary style="font-weight: bold; font-size: larger;">Add New User</summary>
+      <form id="addUserForm">
+        <input type="text" name="username" placeholder="Username" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <label><input type="checkbox" name="isAdmin"> Give Admin Access?</label><br>
+        <button class="btn" type="submit">Add User</button>
+      </form>
+  </div>
+  </details>
+
+  <script>
+    async function loadAdminData() {
+      const res = await fetch('/admin/data');
+      const data = await res.json();
+
+      const userTable = document.querySelector('#userTable tbody');
+      const logTable = document.querySelector('#logTable tbody');
+      userTable.innerHTML = '';
+      logTable.innerHTML = '';
+
+      data.users.forEach(user => {
+        const row = `<tr>
+          <td>${user.username}</td>
+          <td>${user.isAdmin ? 'Admin' : 'User'}</td>
+          <td>
+            <form class="inline" method="POST" action="/admin/delete">
+              <input type="hidden" name="id" value="${user._id}">
+              <button class="btn btn-danger" type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>`;
+        userTable.insertAdjacentHTML('beforeend', row);
+      });
+
+      data.logs.forEach(log => {
+        const row = `<tr>
+          <td>${log.user}</td>
+          <td>${log.page}</td>
+          <td>${log.ip}</td>
+          <td>${new Date(log.timestamp).toLocaleString()}</td>
+        </tr>`;
+        logTable.insertAdjacentHTML('beforeend', row);
+      });
+    }
+
+    document.querySelector('#addUserForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const form = e.target;
+      const formData = new FormData(form);
+      await fetch('/admin/add', {
+        method: 'POST',
+        body: new URLSearchParams(formData)
+      });
+      form.reset();
+      loadAdminData();
+    });
+
+    loadAdminData();
+  </script>
+</body>
+
+</html>
